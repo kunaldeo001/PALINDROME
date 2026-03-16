@@ -7,6 +7,15 @@ import java.util.List;
 public class PalindromeApp {
     private static final String SAMPLE = "madam";
     private static final String NORMALIZED_SAMPLE = "A man a plan a canal Panama";
+    private static final List<PalindromeAlgorithm> ALGORITHMS = List.of(
+            new StringReverseChecker(),
+            new CharacterArrayChecker(),
+            new StackChecker(),
+            new QueueStackChecker(),
+            new DequeChecker(),
+            new LinkedListChecker(),
+            new RecursiveChecker()
+    );
 
     public static void main(String[] args) {
         printHeader();
@@ -55,51 +64,52 @@ public class PalindromeApp {
         printResult(new RecursiveChecker(), SAMPLE, false);
 
         System.out.println("\n11 UC10 - Case-Insensitive & Space-Ignored Palindrome");
-        printResult(new StringReverseChecker(), NORMALIZED_SAMPLE, true);
+        List<TestCase> uc11Cases = List.of(
+                new TestCase(NORMALIZED_SAMPLE, true, true),
+                new TestCase("Never odd or even", true, true),
+                new TestCase("Open AI", true, false)
+        );
+        printTestCases(new StringReverseChecker(), uc11Cases);
     }
 
     private static void run12Uc11And13Uc12() {
         System.out.println("\n12 UC11 - Object-Oriented Palindrome Service");
         PalindromeService service = new PalindromeService(new StringReverseChecker());
         System.out.println("Service algorithm: " + service.getAlgorithmName());
-        System.out.println("Input: " + SAMPLE);
-        System.out.println("Is palindrome: " + service.check(SAMPLE, false));
+        List<TestCase> uc12Cases = List.of(
+                new TestCase(SAMPLE, false, true),
+                new TestCase("refer", false, true),
+                new TestCase("java", false, false)
+        );
+        printTestCases(service, uc12Cases);
 
         System.out.println("\n13 UC12 - Strategy Pattern for Palindrome Algorithms");
-        List<PalindromeAlgorithm> strategies = List.of(
-                new StringReverseChecker(),
-                new CharacterArrayChecker(),
-                new StackChecker(),
-                new QueueStackChecker(),
-                new DequeChecker(),
-                new LinkedListChecker(),
-                new RecursiveChecker()
+        List<TestCase> uc13Cases = List.of(
+                new TestCase("level", false, true),
+                new TestCase("Rotor", false, true),
+                new TestCase("coding", false, false)
         );
-
-        String strategyInput = "level";
-        for (PalindromeAlgorithm strategy : strategies) {
+        for (PalindromeAlgorithm strategy : ALGORITHMS) {
             service.setAlgorithm(strategy);
-            System.out.println(service.getAlgorithmName() + " -> " + service.check(strategyInput, false));
+            System.out.println("Algorithm: " + service.getAlgorithmName());
+            printTestCases(service, uc13Cases);
         }
     }
 
     private static void run14Uc13() {
         System.out.println("\n14 UC13 - Performance Comparison");
-        List<PalindromeAlgorithm> algorithms = List.of(
-                new StringReverseChecker(),
-                new CharacterArrayChecker(),
-                new StackChecker(),
-                new QueueStackChecker(),
-                new DequeChecker(),
-                new LinkedListChecker(),
-                new RecursiveChecker()
+        List<TestCase> uc14Cases = List.of(
+                new TestCase("neveroddoreven", false, true),
+                new TestCase("racecar", false, true),
+                new TestCase("algorithm", false, false),
+                new TestCase("Malayalam", false, true)
         );
-
         String performanceInput = "neveroddoreven";
         int iterations = 10_000;
         List<String> results = new ArrayList<>();
 
-        for (PalindromeAlgorithm algorithm : algorithms) {
+        for (PalindromeAlgorithm algorithm : ALGORITHMS) {
+            int passed = countPassingCases(algorithm, uc14Cases);
             long start = System.nanoTime();
             boolean result = false;
             for (int i = 0; i < iterations; i++) {
@@ -107,7 +117,14 @@ public class PalindromeApp {
             }
             long end = System.nanoTime();
             long duration = end - start;
-            results.add(String.format("%s -> result=%s, time=%d ns", algorithm.getName(), result, duration));
+            results.add(String.format(
+                    "%s -> passed=%d/%d, result=%s, time=%d ns",
+                    algorithm.getName(),
+                    passed,
+                    uc14Cases.size(),
+                    result,
+                    duration
+            ));
         }
 
         for (String line : results) {
@@ -120,5 +137,50 @@ public class PalindromeApp {
         System.out.println("Algorithm: " + service.getAlgorithmName());
         System.out.println("Input: " + input);
         System.out.println("Is palindrome: " + service.check(input, ignoreCaseAndSpace));
+    }
+
+    private static void printTestCases(PalindromeAlgorithm algorithm, List<TestCase> testCases) {
+        PalindromeService service = new PalindromeService(algorithm);
+        System.out.println("Algorithm: " + service.getAlgorithmName());
+        printTestCases(service, testCases);
+    }
+
+    private static void printTestCases(PalindromeService service, List<TestCase> testCases) {
+        for (int index = 0; index < testCases.size(); index++) {
+            TestCase testCase = testCases.get(index);
+            boolean actual = service.check(testCase.input, testCase.ignoreCaseAndSpace);
+            System.out.printf(
+                    "Test %d: input=%s, expected=%s, actual=%s%n",
+                    index + 1,
+                    testCase.input,
+                    testCase.expected,
+                    actual
+            );
+        }
+    }
+
+    private static int countPassingCases(PalindromeAlgorithm algorithm, List<TestCase> testCases) {
+        PalindromeService service = new PalindromeService(algorithm);
+        int passed = 0;
+
+        for (TestCase testCase : testCases) {
+            if (service.check(testCase.input, testCase.ignoreCaseAndSpace) == testCase.expected) {
+                passed++;
+            }
+        }
+
+        return passed;
+    }
+
+    private static class TestCase {
+        private final String input;
+        private final boolean ignoreCaseAndSpace;
+        private final boolean expected;
+
+        private TestCase(String input, boolean ignoreCaseAndSpace, boolean expected) {
+            this.input = input;
+            this.ignoreCaseAndSpace = ignoreCaseAndSpace;
+            this.expected = expected;
+        }
     }
 }
